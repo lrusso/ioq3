@@ -1,17 +1,17 @@
 <!DOCTYPE html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>@CLIENT_NAME@ Emscripten demo</title>
+<title>ioquake3 Emscripten demo</title>
 <style>
 html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: rgb(0, 0, 0); display:flex; align-items: center; justify-content: center; }
-canvas { max-width: 100%; max-height: 100%; min-width: 100%; min-height: 100%; object-fit: contain; }
+canvas { width: 100%; height: 100%; }
 </style>
 
 <canvas id=canvas></canvas>
 
-<script type=module>
+<script>
 // These strings are set in the generated HTML file in the build directory.
-const CLIENT_NAME = '@CLIENT_NAME@';
-const BASEGAME = '@BASEGAME@';
-const EMSCRIPTEN_PRELOAD_FILE = '@EMSCRIPTEN_PRELOAD_FILE@' === 'ON';
+const CLIENT_NAME = 'ioquake3';
+const BASEGAME = 'baseq3';
+const EMSCRIPTEN_PRELOAD_FILE = 'OFF' === 'ON';
 
 // Path or URL containing the client engine .js, .wasm, and possibly .data.
 let enginePath = './';
@@ -20,7 +20,7 @@ let dataPath = './';
 // Path or URL for config file that specifies the files to load for each fs_game.
 let configFilename = `./${CLIENT_NAME}-config.json`;
 
-if (window.location.protocol === 'file:') throw new Error(`Unfortunately browser security restrictions prevent loading wasm from a file: URL. This file must be loaded from a web server. The easiest way to do this is probably to use Python\'s built-in web server by running \`python3 -m http.server\` in the top level source directory and then navigate to http://localhost:8000/build/debug-emscripten-wasm32/${CLIENT_NAME}.html`);
+if (window.location.protocol === 'file:') throw new Error(`Unfortunately browser security restrictions prevent loading the engine from a file: URL. This file must be loaded from a web server. The easiest way to do this is probably to use Python\'s built-in web server by running \`python3 -m http.server\` in the top level source directory and then navigate to http://localhost:8000/build/debug-emscripten-wasm32/${CLIENT_NAME}.html`);
 
 // First set up the command line arguments and the Emscripten filesystem.
 const urlParams = new URLSearchParams(window.location.search);
@@ -30,7 +30,9 @@ const fs_game = urlParams.get('fs_game') || '';
 let generatedArguments = `
     +set sv_pure 0
     +set net_enabled 0
-    +set r_mode -2
+    +set r_mode 4
+    +set r_fullscreen 0
+    +set r_overBrightBits 0
     +set com_basegame "${com_basegame}"
     +set fs_basegame "${fs_basegame}"
     +set fs_game "${fs_game}"
@@ -41,14 +43,23 @@ if (queryArgs) generatedArguments += ` ${queryArgs} `;
 
 const dataURL = new URL(dataPath, location.origin + location.pathname);
 
-const configPromise = EMSCRIPTEN_PRELOAD_FILE ? Promise.resolve({[BASEGAME]: {files: []}})
-  : fetch(configFilename).then(r => r.ok ? r.json() : { /* empty config */ });
+const configPromise = {
+                "demoq3": {
+                    "files": [
+                        {"src": "pak0.pk3", "dst": "/demoq3"},
+                        {"src": "ui.qvm", "dst": "/demoq3/vm"}
+                    ]
+                },
+            };
 
-const ioquake3 = (await import(enginePath + `@CLIENT_BINARY@.js`)).default;
-ioquake3({
+const scriptLoader = document.createElement('script');
+scriptLoader.onload = () => ioquake3({
     canvas: canvas,
     arguments: generatedArguments.trim().split(/\s+/),
     locateFile: (file) => enginePath + file,
+    print: (text) => console.log(text),
+    printErr: (text) => console.log(text),
+    onExit: (code) => window.location.reload(),
     preRun: [async (module) => {
         module.addRunDependency('setup-ioq3-filesystem');
         try {
@@ -81,4 +92,6 @@ ioquake3({
         }
     }],
 });
+scriptLoader.src = enginePath + `ioquake3.js`;
+document.body.appendChild(scriptLoader);
 </script>

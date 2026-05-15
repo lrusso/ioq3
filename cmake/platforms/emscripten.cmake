@@ -25,9 +25,19 @@ list(APPEND CLIENT_LINK_OPTIONS
     -sMAX_WEBGL_VERSION=2
     -sEXPORTED_RUNTIME_METHODS=FS,addRunDependency,removeRunDependency
     -sEXIT_RUNTIME=1
-    -sEXPORT_ES6
+    -sMODULARIZE=1
     -sEXPORT_NAME=${CLIENT_NAME}
 )
+
+option(EMSCRIPTEN_ASMJS "Build asm.js JavaScript output instead of WebAssembly" OFF)
+
+if(EMSCRIPTEN_ASMJS)
+    # Force asm.js / pure-JS output. No .wasm file is produced. Linking with
+    # ports (SDL2, libjpeg, zlib, ogg, vorbis, opus, freetype) will recompile
+    # them to asm.js as needed, which makes the link step considerably slower.
+    list(APPEND CLIENT_COMPILE_OPTIONS -sWASM=0)
+    list(APPEND CLIENT_LINK_OPTIONS -sWASM=0)
+endif()
 
 option(EMSCRIPTEN_PRELOAD_FILE "Preload game files into .data file" OFF)
 

@@ -192,6 +192,12 @@ The following CMake variables may be set, using `-D` on the command line.
                             .data file that is loaded instead of listing
                             individual files in client-config.json
 
+  EMSCRIPTEN_ASMJS        - set to 1 to produce an asm.js (pure JavaScript)
+                            build instead of WebAssembly. No .wasm file is
+                            emitted; the engine is delivered as JavaScript
+                            only. Larger and slower than the wasm build, but
+                            useful for browsers without WebAssembly support.
+
   CMAKE_BUILD_TYPE        - on single config CMake, set to Debug or Release
 ```
 

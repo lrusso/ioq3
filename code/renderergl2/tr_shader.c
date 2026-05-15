@@ -3455,6 +3455,20 @@ shader_t *R_FindShaderEx( const char *name, int lightmapIndex, qboolean mipRawIm
 		image = R_FindImageFile( name, IMGTYPE_COLORALPHA, flags );
 		if ( !image ) {
 			ri.Printf( PRINT_DEVELOPER, "Couldn't find image file for shader %s\n", name );
+
+			// If the lightning bolt shader is missing from the pak (common on
+			// the Q3 demo, where scripts/gfx.shader doesn't define it),
+			// fall back to an additive white quad instead of the opaque
+			// default shader, which otherwise renders as a bright rectangle.
+			if ( !Q_stricmp( strippedName, "lightningBoltNew" ) ) {
+				stages[0].bundle[0].image[0] = tr.whiteImage;
+				stages[0].active = qtrue;
+				stages[0].rgbGen = CGEN_VERTEX;
+				stages[0].alphaGen = AGEN_VERTEX;
+				stages[0].stateBits = GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
+				return FinishShader();
+			}
+
 			shader.defaultShader = qtrue;
 			return FinishShader();
 		}

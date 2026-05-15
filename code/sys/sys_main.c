@@ -318,7 +318,13 @@ static Q_NO_RETURN void Sys_Exit( int exitCode )
 
 	Sys_PlatformExit( );
 
+#ifdef __EMSCRIPTEN__
+	// emscripten_set_main_loop keeps the runtime alive, so a plain exit()
+	// won't fire Module.onExit. Force a real shutdown.
+	emscripten_force_exit( exitCode );
+#else
 	exit( exitCode );
+#endif
 }
 
 /*

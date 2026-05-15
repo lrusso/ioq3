@@ -711,7 +711,13 @@ static int GLimp_SetMode(int mode, qboolean fullscreen, qboolean noborder, qbool
 			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, contexts[type].majorVersion );
 			SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, contexts[type].minorVersion );
 
-			if( ( SDL_window = SDL_CreateWindow( CLIENT_WINDOW_TITLE, x, y,
+			if( ( SDL_window = SDL_CreateWindow(
+#ifdef __EMSCRIPTEN__
+					NULL,
+#else
+					CLIENT_WINDOW_TITLE,
+#endif
+					x, y,
 					glConfig.vidWidth, glConfig.vidHeight, flags ) ) == NULL )
 			{
 				ri.Printf( PRINT_DEVELOPER, "SDL_CreateWindow failed: %s\n", SDL_GetError( ) );
