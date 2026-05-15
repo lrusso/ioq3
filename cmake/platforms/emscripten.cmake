@@ -37,6 +37,11 @@ if(EMSCRIPTEN_ASMJS)
     # them to asm.js as needed, which makes the link step considerably slower.
     list(APPEND CLIENT_COMPILE_OPTIONS -sWASM=0)
     list(APPEND CLIENT_LINK_OPTIONS -sWASM=0)
+    # Asm.js is slow enough that synchronous map loading blocks the browser
+    # event loop for several seconds, so the loading wallpaper / progress
+    # never paints. Asyncify lets SDL_GL_SwapWindow yield to the browser
+    # between intermediate SCR_UpdateScreen calls so each frame is composited.
+    list(APPEND CLIENT_LINK_OPTIONS -sASYNCIFY=1 -sASYNCIFY_STACK_SIZE=24576)
 endif()
 
 option(EMSCRIPTEN_PRELOAD_FILE "Preload game files into .data file" OFF)
