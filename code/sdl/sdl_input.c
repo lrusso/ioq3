@@ -363,10 +363,13 @@ static void IN_ActivateMouse( qboolean isFullscreen )
 	{
 		if( in_nograb->modified || !mouseActive )
 		{
+#ifndef __EMSCRIPTEN__
 			if( in_nograb->integer ) {
 				SDL_SetRelativeMouseMode( SDL_FALSE );
 				SDL_SetWindowGrab( SDL_window, SDL_FALSE );
-			} else {
+			} else
+#endif
+			{
 				SDL_SetRelativeMouseMode( SDL_TRUE );
 				SDL_SetWindowGrab( SDL_window, SDL_TRUE );
 			}
@@ -385,6 +388,12 @@ IN_DeactivateMouse
 */
 static void IN_DeactivateMouse( qboolean isFullscreen )
 {
+#ifdef __EMSCRIPTEN__
+	// In the browser, pointer-lock release is the user's prerogative (Esc,
+	// tab switch, visibility change). The engine must never give it up on
+	// its own — doing so would break the input loop and surprise the user.
+	return;
+#else
 	if( !SDL_WasInit( SDL_INIT_VIDEO ) )
 		return;
 
@@ -409,6 +418,7 @@ static void IN_DeactivateMouse( qboolean isFullscreen )
 
 		mouseActive = qfalse;
 	}
+#endif
 }
 
 // We translate axes movement into keypresses
