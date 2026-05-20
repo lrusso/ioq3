@@ -296,25 +296,29 @@ typedef struct
 static InitialVideoOptions_s	s_ivo;
 static graphicsoptions_t		s_graphicsoptions;	
 
+// Note: fullscreen is intentionally qfalse in every preset — the asm.js
+// build cannot enter fullscreen without a user gesture from the canvas,
+// and the menu locks the Fullscreen control to OFF, so preset application
+// must not flip it back on.
 static InitialVideoOptions_s s_ivo_templates[] =
 {
 	{
-		6, qtrue, 3, 0, 2, 2, 2, 1, 0, qtrue
+		6, qfalse, 3, 0, 2, 2, 2, 1, 0, qtrue
 	},
 	{
-		4, qtrue, 2, 0, 2, 2, 1, 1, 0, qtrue	// JDC: this was tq 3
+		4, qfalse, 2, 0, 2, 2, 1, 1, 0, qtrue	// JDC: this was tq 3
 	},
 	{
-		3, qtrue, 2, 0, 0, 0, 1, 0, 0, qtrue
+		3, qfalse, 2, 0, 0, 0, 1, 0, 0, qtrue
 	},
 	{
-		2, qtrue, 1, 0, 1, 0, 0, 0, 0, qtrue
+		2, qfalse, 1, 0, 1, 0, 0, 0, 0, qtrue
 	},
 	{
-		2, qtrue, 1, 1, 1, 0, 0, 0, 0, qtrue
+		2, qfalse, 1, 1, 1, 0, 0, 0, 0, qtrue
 	},
 	{
-		3, qtrue, 1, 0, 0, 0, 1, 0, 0, qtrue
+		3, qfalse, 1, 0, 0, 0, 1, 0, 0, qtrue
 	}
 };
 
@@ -569,18 +573,24 @@ GraphicsOptions_UpdateMenuItems
 */
 static void GraphicsOptions_UpdateMenuItems( void )
 {
+	// Fullscreen is permanently off and locked — the browser only grants
+	// fullscreen in response to a user gesture from the canvas, so the
+	// menu cannot reliably toggle it. Keep the control visible (so the
+	// user can see the state) but grayed and non-interactive.
+	s_graphicsoptions.fs.curvalue = 0;
+	s_graphicsoptions.fs.generic.flags |= QMF_GRAYED;
+
 	if ( s_graphicsoptions.driver.curvalue == 1 )
 	{
-		s_graphicsoptions.fs.curvalue = 1;
-		s_graphicsoptions.fs.generic.flags |= QMF_GRAYED;
 		s_graphicsoptions.colordepth.curvalue = 1;
 	}
-	else
-	{
-		s_graphicsoptions.fs.generic.flags &= ~QMF_GRAYED;
-	}
 
-	if ( s_graphicsoptions.fs.curvalue == 0 || s_graphicsoptions.driver.curvalue == 1 )
+	// Previously this also fired when fs.curvalue == 0 ("windowed mode
+	// can't pick color depth"). With Fullscreen locked OFF that would
+	// clamp colordepth to 0 every frame, overriding any preset that
+	// expects colordepth=2 and making CheckConfig always fall through
+	// to "Custom". Only the 3dfx driver path keeps the override now.
+	if ( s_graphicsoptions.driver.curvalue == 1 )
 	{
 		s_graphicsoptions.colordepth.curvalue = 0;
 		s_graphicsoptions.colordepth.generic.flags |= QMF_GRAYED;
@@ -694,7 +704,8 @@ static void GraphicsOptions_ApplyChanges( void *unused, int notification )
 	else
 		trap_Cvar_SetValue( "r_mode", s_graphicsoptions.mode.curvalue );
 
-	trap_Cvar_SetValue( "r_fullscreen", s_graphicsoptions.fs.curvalue );
+	// Fullscreen is locked OFF — see GraphicsOptions_UpdateMenuItems.
+	trap_Cvar_SetValue( "r_fullscreen", 0 );
 	switch ( s_graphicsoptions.colordepth.curvalue )
 	{
 	case 0:
@@ -883,7 +894,8 @@ static void GraphicsOptions_SetMenuItems( void )
 	}
 	s_graphicsoptions.ratio.curvalue =
 		resToRatio[ s_graphicsoptions.mode.curvalue ];
-	s_graphicsoptions.fs.curvalue = trap_Cvar_VariableValue("r_fullscreen");
+	// Fullscreen is locked OFF in this build regardless of the cvar's state.
+	s_graphicsoptions.fs.curvalue = 0;
 	s_graphicsoptions.allow_extensions.curvalue = trap_Cvar_VariableValue("r_allowExtensions");
 	s_graphicsoptions.tq.curvalue = 3-trap_Cvar_VariableValue( "r_picmip");
 	if ( s_graphicsoptions.tq.curvalue < 0 )
@@ -949,10 +961,10 @@ static void GraphicsOptions_SetMenuItems( void )
 		break;
 	}
 
-	if ( s_graphicsoptions.fs.curvalue == 0 )
-	{
-		s_graphicsoptions.colordepth.curvalue = 0;
-	}
+	// Mirrors the change in GraphicsOptions_UpdateMenuItems: the original
+	// "if fs==0 force colordepth=0" branch is gone because Fullscreen is
+	// locked OFF, and clobbering colordepth on menu open would make the
+	// re-read state never match a preset (always falls through to "Custom").
 	if ( s_graphicsoptions.driver.curvalue == 1 )
 	{
 		s_graphicsoptions.colordepth.curvalue = 1;
