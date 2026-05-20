@@ -149,6 +149,17 @@ GLimp_DetectAvailableModes
 */
 static void GLimp_DetectAvailableModes(void)
 {
+#ifdef __EMSCRIPTEN__
+	// The SDL2 emscripten port reports exactly one display mode — the
+	// browser's screen size — so r_availableModes would collapse the UI's
+	// Resolution dropdown to that single entry. Once the user applies it,
+	// the menu treats the current resolution as the only available one
+	// and they can't switch back to a smaller mode. Leave r_availableModes
+	// empty so both UIs (q3_ui and ui) fall back to their builtin lists;
+	// the canvas scales to whatever resolution gets picked.
+	ri.Printf( PRINT_ALL, "Display supports any resolution\n" );
+	return;
+#else
 	int i, j;
 	char buf[ MAX_STRING_CHARS ] = { 0 };
 	int numSDLModes;
@@ -229,6 +240,7 @@ static void GLimp_DetectAvailableModes(void)
 		ri.Cvar_Set( "r_availableModes", buf );
 	}
 	SDL_free( modes );
+#endif
 }
 
 /*
