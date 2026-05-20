@@ -1306,6 +1306,14 @@ void IN_Init( void *windowData )
 
 	SDL_window = (SDL_Window *)windowData;
 
+	// The previous SDL window (if any) is gone, so any pointer-lock state
+	// the browser/SDL had is gone with it. Force mouseActive to qfalse so
+	// IN_ActivateMouse re-issues SDL_SetRelativeMouseMode(SDL_TRUE) and the
+	// engine re-acquires the lock on the new window — without this, a
+	// vid_restart leaves mouseActive==qtrue (since IN_DeactivateMouse is
+	// a no-op under __EMSCRIPTEN__) and the re-capture never fires.
+	mouseActive = qfalse;
+
 	Com_DPrintf( "\n------- Input Initialization -------\n" );
 
 	in_keyboardDebug = Cvar_Get( "in_keyboardDebug", "0", CVAR_ARCHIVE );
