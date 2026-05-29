@@ -669,8 +669,14 @@ void SV_DropClient( client_t *drop, const char *reason ) {
 	// will receive many server commands during the drop
 	drop->gamestateMessageNum = -1;
 
-	// tell everyone why they got dropped
-	SV_SendServerCommand( NULL, "print \"%s" S_COLOR_WHITE " %s\n\"", drop->name, reason );
+	// tell everyone why they got dropped — but only if there's something
+	// to tell. An empty (or NULL) reason means "silent drop", e.g. the bot
+	// kill during SV_SpawnServer level transitions, which would otherwise
+	// broadcast a bare bot name like "Sarge ^7 " before the next level's
+	// "entered the game" lines.
+	if ( reason && *reason ) {
+		SV_SendServerCommand( NULL, "print \"%s" S_COLOR_WHITE " %s\n\"", drop->name, reason );
+	}
 
 	// call the prog function for removing a client
 	// this will remove the body, among other things
