@@ -1111,7 +1111,7 @@ static void CG_ServerCommand( void ) {
 		return;
 	}
 
-	CG_Printf( "Unknown client game command: %s\n", cmd );
+	//CG_Printf( "Unknown client game command: %s\n", cmd );
 }
 
 
