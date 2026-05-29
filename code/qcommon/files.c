@@ -1951,7 +1951,7 @@ void FS_WriteFile( const char *qpath, const void *buffer, int size ) {
 
 	f = FS_FOpenFileWrite_HomeData( qpath );
 	if ( !f ) {
-		Com_Printf( "Failed to open %s\n", qpath );
+		//Com_Printf( "Failed to open %s\n", qpath );
 		return;
 	}
 

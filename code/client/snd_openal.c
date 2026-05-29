@@ -2535,7 +2535,7 @@ qboolean S_AL_Init( soundInterface_t *si )
 	// Load QAL
 	if( !QAL_Init( s_alDriver->string ) )
 	{
-		Com_Printf( "Failed to load library: \"%s\".\n", s_alDriver->string );
+		//Com_Printf( "Failed to load library: \"%s\".\n", s_alDriver->string );
 		if( !Q_stricmp( s_alDriver->string, ALDRIVER_DEFAULT ) || !QAL_Init( ALDRIVER_DEFAULT ) ) {
 			return qfalse;
 		}
@@ -2609,14 +2609,14 @@ qboolean S_AL_Init( soundInterface_t *si )
 	alDevice = qalcOpenDevice(device);
 	if( !alDevice && device )
 	{
-		Com_Printf( "Failed to open OpenAL device '%s', trying default.\n", device );
+		//Com_Printf( "Failed to open OpenAL device '%s', trying default.\n", device );
 		alDevice = qalcOpenDevice(NULL);
 	}
 
 	if( !alDevice )
 	{
 		QAL_Shutdown( );
-		Com_Printf( "Failed to open OpenAL device.\n" );
+		//Com_Printf( "Failed to open OpenAL device.\n" );
 		return qfalse;
 	}
 
@@ -2626,7 +2626,7 @@ qboolean S_AL_Init( soundInterface_t *si )
 	{
 		QAL_Shutdown( );
 		qalcCloseDevice( alDevice );
-		Com_Printf( "Failed to create OpenAL context.\n" );
+		//Com_Printf( "Failed to create OpenAL context.\n" );
 		return qfalse;
 	}
 	qalcMakeContextCurrent( alContext );
@@ -2700,7 +2700,7 @@ qboolean S_AL_Init( soundInterface_t *si )
 			alCaptureDevice = qalcCaptureOpenDevice(inputdevice, 48000, AL_FORMAT_MONO16, VOIP_MAX_PACKET_SAMPLES*4);
 			if( !alCaptureDevice && inputdevice )
 			{
-				Com_Printf( "Failed to open OpenAL Input device '%s', trying default.\n", inputdevice );
+				//Com_Printf( "Failed to open OpenAL Input device '%s', trying default.\n", inputdevice );
 				alCaptureDevice = qalcCaptureOpenDevice(NULL, 48000, AL_FORMAT_MONO16, VOIP_MAX_PACKET_SAMPLES*4);
 			}
 			Com_Printf( "OpenAL capture device %s.\n",
