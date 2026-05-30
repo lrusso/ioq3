@@ -3456,17 +3456,23 @@ shader_t *R_FindShaderEx( const char *name, int lightmapIndex, qboolean mipRawIm
 		if ( !image ) {
 			ri.Printf( PRINT_DEVELOPER, "Couldn't find image file for shader %s\n", name );
 
-			// If the lightning bolt shader is missing from the pak (common on
-			// the Q3 demo, where scripts/gfx.shader doesn't define it),
-			// fall back to an additive white quad instead of the opaque
-			// default shader, which otherwise renders as a bright rectangle.
+			// The Q3 demo data never defines "lightningBoltNew" (the name
+			// cgame registers for the lightning gun beam). It only ships the
+			// older "lightningBolt" shader (scripts/gfx.shader -> the real
+			// gfx/misc/lightning3 texture). Commercial paks DO define
+			// lightningBoltNew, so this alias only ever triggers on the demo.
+			//
+			// Aliasing to the real shader (instead of faking a white quad)
+			// draws the actual scrolling lightning texture, and because
+			// lightningBolt drives color with "rgbgen wave" (not rgbGen
+			// vertex) it is visible no matter what the beam entity's
+			// shaderRGBA is. The old rgbGen-vertex fallback colored the beam
+			// from the entity color (DoRailCore reads e.shaderRGBA), which
+			// cgame leaves at zero on some builds (e.g. cgame.qvm) -> additive
+			// black -> invisible bolt. That is why it only showed up without
+			// cgame.qvm.
 			if ( !Q_stricmp( strippedName, "lightningBoltNew" ) ) {
-				stages[0].bundle[0].image[0] = tr.whiteImage;
-				stages[0].active = qtrue;
-				stages[0].rgbGen = CGEN_VERTEX;
-				stages[0].alphaGen = AGEN_VERTEX;
-				stages[0].stateBits = GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
-				return FinishShader();
+				return R_FindShaderEx( "lightningBolt", lightmapIndex, mipRawImage, realLightmapIndex );
 			}
 
 			shader.defaultShader = qtrue;
