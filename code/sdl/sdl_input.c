@@ -44,6 +44,16 @@ static SDL_Joystick *stick = NULL;
 
 static qboolean mouseAvailable = qfalse;
 static qboolean mouseActive = qfalse;
+#ifdef __EMSCRIPTEN__
+// Browsers only grant Pointer Lock in response to a user gesture, and SDL's
+// Emscripten port only reports relative mouse motion once the cursor has
+// entered the canvas. If the engine auto-grabs at boot while the OS cursor is
+// outside the canvas, the lock is taken but the motion deltas are always zero
+// (absolute coords are frozen under lock), so the view cannot be turned.
+// Defer the grab until the first mouse click: a valid gesture that also proves
+// the cursor is over the canvas. See IN_ActivateMouse / IN_ProcessEvents.
+static qboolean mouseCanGrab = qfalse;
+#endif
 
 static cvar_t *in_mouse             = NULL;
 static cvar_t *in_nograb;
@@ -349,6 +359,14 @@ static void IN_ActivateMouse( qboolean isFullscreen )
 {
 	if (!mouseAvailable || !SDL_WasInit( SDL_INIT_VIDEO ) )
 		return;
+
+#ifdef __EMSCRIPTEN__
+	// Don't request Pointer Lock until the user has clicked the canvas. A grab
+	// issued before that either gets rejected by the browser or, worse, locks
+	// with the cursor off-canvas and yields only zero motion deltas.
+	if( !mouseCanGrab )
+		return;
+#endif
 
 	if( !mouseActive )
 	{
@@ -1135,6 +1153,13 @@ static void IN_ProcessEvents( void )
 			case SDL_MOUSEBUTTONUP:
 				{
 					int b;
+#ifdef __EMSCRIPTEN__
+					// A click is the user gesture the browser needs, and it
+					// only reaches the canvas when the cursor is over it. From
+					// now on it's safe for IN_ActivateMouse to grab the mouse.
+					if( e.type == SDL_MOUSEBUTTONDOWN )
+						mouseCanGrab = qtrue;
+#endif
 					switch( e.button.button )
 					{
 						case SDL_BUTTON_LEFT:   b = K_MOUSE1;     break;
